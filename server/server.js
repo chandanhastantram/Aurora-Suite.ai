@@ -24,7 +24,7 @@ try {
 
 let geminiAI;
 try {
-  if (process.env.GEMINI_API_KEY) {
+  if (process.env.GEMINI_API_KEY && !process.env.GEMINI_API_KEY.includes('your_')) {
       geminiAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
   }
 } catch (e) {
@@ -46,10 +46,51 @@ const fallbackResponse = async (prompt, res) => {
   res.end();
 };
 
-// 1. Chat Endpoint (Groq)
+// 1. Chat Endpoint (Multi-Provider)
 app.post('/api/chat', async (req, res) => {
-  const { messages, model = "llama-3.3-70b-versatile" } = req.body;
+  const { messages, model = "llama-3.3-70b-versatile", provider = "quantum" } = req.body;
 
+  res.setHeader('Content-Type', 'text/event-stream');
+  res.setHeader('Cache-Control', 'no-cache');
+  res.setHeader('Connection', 'keep-alive');
+
+  if (provider === "nexus") {
+      if (!geminiAI) {
+          return fallbackResponse(messages[messages.length-1].content, res);
+      }
+      try {
+          // Extract system message for systemInstruction if supported
+          let systemInstruction = "";
+          const contents = messages.filter(m => {
+              if (m.role === 'system') {
+                  systemInstruction += m.content + " ";
+                  return false;
+              }
+              return true;
+          }).map(m => ({
+              role: m.role === 'assistant' ? 'model' : 'user',
+              parts: [{ text: m.content }]
+          }));
+
+          const config = systemInstruction ? { systemInstruction } : {};
+          const modelInstance = geminiAI.getGenerativeModel({ model: "gemini-1.5-flash", ...config });
+
+          const result = await modelInstance.generateContentStream({ contents });
+          for await (const chunk of result.stream) {
+              const chunkText = chunk.text();
+              res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: chunkText } }] })}\n\n`);
+          }
+          res.write('data: [DONE]\n\n');
+          return res.end();
+      } catch (error) {
+          console.error('Gemini API Error:', error);
+          res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: "\n[Error connecting to Gemini backend or invalid key.]" } }] })}\n\n`);
+          res.write('data: [DONE]\n\n');
+          return res.end();
+      }
+  }
+
+  // Fallback to Groq
   if (!groq) {
       return fallbackResponse(messages[messages.length-1].content, res);
   }
@@ -62,10 +103,6 @@ app.post('/api/chat', async (req, res) => {
       stream: true,
     });
 
-    res.setHeader('Content-Type', 'text/event-stream');
-    res.setHeader('Cache-Control', 'no-cache');
-    res.setHeader('Connection', 'keep-alive');
-
     for await (const chunk of chatCompletion) {
       res.write(`data: ${JSON.stringify(chunk)}\n\n`);
     }
@@ -74,7 +111,9 @@ app.post('/api/chat', async (req, res) => {
     res.end();
   } catch (error) {
     console.error('Groq API Error:', error);
-    res.status(500).json({ error: 'Failed to generate response' });
+    res.write(`data: ${JSON.stringify({ choices: [{ delta: { content: "\n[Error connecting to Groq backend.]" } }] })}\n\n`);
+    res.write('data: [DONE]\n\n');
+    res.end();
   }
 });
 

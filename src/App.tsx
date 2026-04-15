@@ -204,7 +204,7 @@ export const App: React.FC = () => {
           })
         );
       } else if (imageFile) {
-        const analysisResult = await fetchImageAnalysis(text, imageFile);
+        const analysisResult = await fetchImageAnalysis(imageFile, text);
         setSessions((prev) =>
           prev.map((s) => {
             if (s.id === currentSessionId) {
