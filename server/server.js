@@ -126,6 +126,20 @@ app.post('/api/generate-image', (req, res) => {
     res.json({ imageUrl });
 });
 
+// 4. API Health Check / Root Endpoint
+app.get('/', (req, res) => {
+    res.status(200).send(`
+        <html>
+            <body style="font-family: sans-serif; display: flex; align-items: center; justify-content: center; height: 100vh; background: #0f172a; color: #f8fafc; margin: 0;">
+                <div style="text-align: center;">
+                    <h1 style="color: #10b981;">Aurora Suite API Server</h1>
+                    <p>The backend is actively running and listening for frontend requests.</p>
+                </div>
+            </body>
+        </html>
+    `);
+});
+
 if (process.env.NODE_ENV !== 'production' || process.env.VERCEL !== '1') {
   app.listen(port, () => {
     console.log(`Server listening on port ${port}`);
