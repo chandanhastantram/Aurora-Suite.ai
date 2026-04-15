@@ -61,6 +61,8 @@ interface SidebarProps {
   toggleDarkMode: () => void;
   selectedPersona: Persona;
   setSelectedPersona: (p: Persona) => void;
+  aiProvider: "quantum" | "nexus";
+  setAiProvider: (provider: "quantum" | "nexus") => void;
   sessions: Array<{ id: string; name: string }>;
   currentSessionId: string;
   createNewSession: () => void;
@@ -75,6 +77,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
   toggleDarkMode,
   selectedPersona,
   setSelectedPersona,
+  aiProvider,
+  setAiProvider,
   sessions,
   currentSessionId,
   createNewSession,
@@ -162,14 +166,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
         </p>
       </div>
 
-      {/* Powered by Groq Badge */}
+      {/* AI Model Switcher */}
       <div className="px-6 py-4 border-b border-slate-200/50 dark:border-slate-800/50">
-        <div className="flex items-center gap-2.5 p-3 rounded-xl bg-gradient-to-r from-violet-500/10 to-cyan-500/10 dark:from-violet-500/20 dark:to-cyan-500/20 border border-violet-200/30 dark:border-violet-800/30">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          <div>
-            <p className="text-xs font-semibold text-slate-700 dark:text-slate-200">⚡ Powered by Groq AI</p>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400">Llama 3.3 70B Versatile · Live</p>
-          </div>
+        <h2 className="text-xs font-semibold text-slate-400 tracking-wider uppercase mb-3 flex items-center gap-2">
+          <Sparkles className="w-3.5 h-3.5" /> AI Engine
+        </h2>
+        <div className="flex rounded-xl p-1 bg-slate-100 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 w-full relative">
+          <button
+            onClick={() => {
+              uiAudio.playClick();
+              setAiProvider('nexus');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center py-2 px-1 text-[11px] font-semibold rounded-lg transition-all ${
+              aiProvider === 'nexus'
+                ? 'bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <span>✧ Nexus</span>
+            <span className="text-[9px] opacity-70 font-normal">Gemini 1.5</span>
+          </button>
+          <button
+            onClick={() => {
+              uiAudio.playClick();
+              setAiProvider('quantum');
+            }}
+            className={`flex-1 flex flex-col items-center justify-center py-2 px-1 text-[11px] font-semibold rounded-lg transition-all ${
+              aiProvider === 'quantum'
+                ? 'bg-white dark:bg-slate-700 text-emerald-600 dark:text-emerald-400 shadow-sm ring-1 ring-slate-200 dark:ring-slate-600'
+                : 'text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200'
+            }`}
+          >
+            <span>⚡ Quantum</span>
+            <span className="text-[9px] opacity-70 font-normal">Llama 3.3</span>
+          </button>
         </div>
       </div>
 
@@ -250,7 +280,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       {/* Footer */}
       <div className="p-4 border-t border-slate-200/50 dark:border-slate-800/50 text-center text-[10px] text-slate-400">
         <p>Premium Futuristic AI Assistant</p>
-        <p className="mt-0.5">React + Tailwind + Groq AI</p>
+        <p className="mt-0.5">React + Tailwind + Dynamic AI</p>
       </div>
     </aside>
   );

@@ -7,9 +7,10 @@ import { AnimatedBackground } from './components/AnimatedBackground';
 import { UserProfile } from './components/UserProfile';
 import { fetchAIResponse, fetchImageAnalysis, fetchImageGeneration } from './utils/aiEngine';
 import { uiAudio } from './utils/audio';
-import { Download } from 'lucide-react';
+import { Download, Settings } from 'lucide-react';
 import { Login } from './components/Login';
 import { getLocalSession, clearLocalSession } from './utils/localAuth';
+import { SettingsModal } from './components/SettingsModal';
 
 type UserData = {
   email: string;
@@ -58,6 +59,22 @@ export const App: React.FC = () => {
     const saved = localStorage.getItem('aurora_persona');
     return saved ? JSON.parse(saved) : personas[0];
   });
+  const [aiProvider, setAiProvider] = useState<"quantum" | "nexus">(() => {
+    const saved = localStorage.getItem('aurora_provider');
+    return saved ? JSON.parse(saved) : "nexus";
+  });
+  
+  const [autoTTS, setAutoTTS] = useState<boolean>(() => {
+    const saved = localStorage.getItem('aurora_autoTTS');
+    return saved ? JSON.parse(saved) : false;
+  });
+  
+  const [chatFontSize, setChatFontSize] = useState<string>(() => {
+    const saved = localStorage.getItem('aurora_fontSize');
+    return saved ? JSON.parse(saved) : 'text-base';
+  });
+
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false);
 
   // ── Chat Sessions ──
   const [sessions, setSessions] = useState<Session[]>(() => {
@@ -104,6 +121,18 @@ export const App: React.FC = () => {
   useEffect(() => {
     localStorage.setItem('aurora_persona', JSON.stringify(selectedPersona));
   }, [selectedPersona]);
+
+  useEffect(() => {
+    localStorage.setItem('aurora_provider', JSON.stringify(aiProvider));
+  }, [aiProvider]);
+
+  useEffect(() => {
+    localStorage.setItem('aurora_autoTTS', JSON.stringify(autoTTS));
+  }, [autoTTS]);
+
+  useEffect(() => {
+    localStorage.setItem('aurora_fontSize', JSON.stringify(chatFontSize));
+  }, [chatFontSize]);
 
   useEffect(() => {
     localStorage.setItem('aurora_sessions', JSON.stringify(sessions));
@@ -218,10 +247,11 @@ export const App: React.FC = () => {
         );
       } else {
         const currentMessages = currentSession.messages;
-        await fetchAIResponse(
+        const fullAIResponse = await fetchAIResponse(
           text,
           currentMessages,
           selectedPersona,
+          aiProvider,
           (currentChunk: string) => {
             setSessions((prev) =>
               prev.map((s) => {
@@ -236,6 +266,10 @@ export const App: React.FC = () => {
             );
           }
         );
+        
+        if (autoTTS && fullAIResponse) {
+          handleTTS(fullAIResponse);
+        }
       }
     } catch (error) {
       console.error(error);
@@ -368,6 +402,8 @@ export const App: React.FC = () => {
         toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
         selectedPersona={selectedPersona}
         setSelectedPersona={setSelectedPersona}
+        aiProvider={aiProvider}
+        setAiProvider={setAiProvider}
         sessions={sessions.map((s) => ({ id: s.id, name: s.name }))}
         currentSessionId={currentSessionId}
         createNewSession={createNewSession}
@@ -403,6 +439,18 @@ export const App: React.FC = () => {
             >
               <Download className="w-3.5 h-3.5" />
               Export
+            </button>
+
+            {/* Settings Button */}
+            <button
+              onClick={() => {
+                uiAudio.playClick();
+                setIsSettingsOpen(true);
+              }}
+              className="hidden sm:flex p-1.5 rounded-full bg-slate-100/50 dark:bg-slate-800/50 border border-slate-200/50 dark:border-slate-700/50 hover:bg-slate-200/50 dark:hover:bg-slate-700/60 text-slate-600 dark:text-slate-300 transition-all shadow-sm"
+              title="Settings"
+            >
+              <Settings className="w-4 h-4" />
             </button>
 
             {/* AI Status Badge */}
@@ -446,9 +494,24 @@ export const App: React.FC = () => {
             onSendMessage={handleSendMessage}
             accentColor={selectedPersona.accent}
             onVoiceSpeak={handleTTS}
+            chatFontSize={chatFontSize}
           />
         </div>
       </main>
+
+      {/* Settings Modal */}
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        isDarkMode={isDarkMode}
+        toggleDarkMode={() => setIsDarkMode(!isDarkMode)}
+        autoTTS={autoTTS}
+        setAutoTTS={setAutoTTS}
+        chatFontSize={chatFontSize}
+        setChatFontSize={setChatFontSize}
+        accentColor={selectedPersona.accent}
+        onClearData={handleClearHistory}
+      />
     </div>
   );
 };

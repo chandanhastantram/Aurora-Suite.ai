@@ -1,14 +1,12 @@
 import { Message } from '../components/ChatArea';
 import { Persona } from '../components/Sidebar';
 
-// Easily switch the AI text-model provider here ("quantum" or "nexus")
-export const AI_PROVIDER: "quantum" | "nexus" = "nexus";
-
 // 1. Chat Proxy — Streams from local backend
 export const fetchAIResponse = async (
   prompt: string,
   history: Message[],
   persona: Persona,
+  provider: "quantum" | "nexus",
   onStream: (chunk: string) => void
 ): Promise<string> => {
   const systemMessage = {
@@ -29,7 +27,7 @@ export const fetchAIResponse = async (
     const res = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ messages, provider: AI_PROVIDER })
+      body: JSON.stringify({ messages, provider })
     });
 
     if (!res.ok) throw new Error(`Backend Error: ${res.status}`);

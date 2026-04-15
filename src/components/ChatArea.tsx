@@ -20,6 +20,7 @@ interface ChatAreaProps {
   onSendMessage: (text: string, imageFile?: File | null) => void;
   accentColor: string;
   onVoiceSpeak: (text: string) => void;
+  chatFontSize: string;
 }
 
 export const ChatArea: React.FC<ChatAreaProps> = ({
@@ -28,6 +29,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
   onSendMessage,
   accentColor,
   onVoiceSpeak,
+  chatFontSize,
 }) => {
   const [inputText, setInputText] = useState('');
   const [isListening, setIsListening] = useState(false);
@@ -132,7 +134,7 @@ export const ChatArea: React.FC<ChatAreaProps> = ({
                       <img src={msg.imageUrl} alt="attachment" className="rounded-lg max-w-full h-auto max-h-64 object-cover shadow-sm bg-black/10" />
                     )}
                     {msg.content && (
-                      <div className="text-sm leading-relaxed overflow-hidden">
+                      <div className={`${chatFontSize} leading-relaxed overflow-hidden transition-all duration-300`}>
                         <ReactMarkdown
                           components={{
                             code({ node, className, children, ...props }: any) {
